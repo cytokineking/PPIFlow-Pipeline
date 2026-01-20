@@ -1,6 +1,6 @@
 # PPIFlow User Guide
 
-PPIFlow demonstrated a flow-matching-based framework and integrated design workflow for the de novo generation of high-affinity binders targeting precise epitopes. It supports a diverse range of tasks including protein-protein interaction (PPI) binders, nanobodies, antibodies, motif scaffolding, and unconditional monomer generation. [PPIFlow paper](https://www.dropbox.com/scl/fi/u22dhxl8wr3czp41nl4r8/Main-SI_High-Affinity-Protein-Binder-Design-via-Flow-Matching-and-In-Silico-Maturation.pdf?rlkey=vio3k19i2v8cb3z7ox4bn63tf&st=i8l995x6&dl=0)
+PPIFlow demonstrated a flow-matching-based framework and integrated design workflow for the de novo generation of high-affinity binders targeting precise epitopes. It supports a diverse range of tasks including protein-protein interaction (PPI) binders, nanobodies, antibodies, motif scaffolding, and unconditional monomer generation. [PPIFlow paper](https://www.dropbox.com/scl/fi/66aywchefb8ubz9yyh8uj/Main-SI_High-Affinity-Protein-Binder-Design-via-Flow-Matching-and-In-Silico-Maturation.pdf?rlkey=ef21phxwv9q7hhq2y5rjh68sh&st=enx46vge&dl=0)
 
 ## Environment Setup
 
