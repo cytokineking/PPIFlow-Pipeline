@@ -2,7 +2,7 @@
 
 ![](./model.png)
 
-PPIFlow demonstrated a flow-matching-based framework and integrated design workflow for the de novo generation of high-affinity binders targeting precise epitopes. It supports a diverse range of tasks including protein-protein interaction (PPI) binders, nanobodies, antibodies, motif scaffolding, and unconditional monomer generation. [PPIFlow paper](https://www.dropbox.com/scl/fi/9v6myel7uodrdsckwk5bd/Main_SI1_High-Affinity-Protein-Binder-Design-via-Flow-Matching-and-In-Silico-Maturation.pdf?rlkey=ohvrohvflnyq993mq24skjm2v&st=tr7t3x3a&dl=0)
+PPIFlow demonstrated a flow-matching-based framework and integrated design workflow for the de novo generation of high-affinity binders targeting precise epitopes. It supports a diverse range of tasks including protein-protein interaction (PPI) binders, nanobodies, antibodies, motif scaffolding, and unconditional monomer generation. [PPIFlow paper](https://drive.google.com/file/d/1oAchQfnbHookwftWcMIAmT_sYu4nAGBs/view?usp=drive_link)
 
 We provide a **demo** to illustrate the complete workflow.  
 All steps of the pipeline are presented in **`demo_vhh.ipynb`**, from backbone generation and sequence design to affinity evaluation, allowing users to reproduce the full VHH design process.
