@@ -19,6 +19,9 @@ if [ "$#" -ne 4 ]; then
 fi
 
 REPO='demo_scripts/flowpacker_af3score'
+# Download URL: https://github.com/Mingchenchen/AF3Score/releases/tag/v2.0.0
+AF3SCORE_REPO="/path/to/af3score_v2"
+
 
 echo "========== Job started at: $(date) =========="
 start_time=$(date +%s)
@@ -230,7 +233,7 @@ for subfolder in "$af3_input_batch"/json/*; do
     echo "Inference: $folder_name"
 
     submit_output=$(sbatch --output="$af3score_log_dir/${folder_name}-%j.out" \
-    $REPO/5-submit_af3score.sh \
+    $REPO/03_submit_af3score.sh \
       "$af3_input_batch/json/$folder_name" \
       "$af3_input_batch/jax/$folder_name" \
       "$output_dir_af3score" 
