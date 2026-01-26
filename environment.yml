@@ -121,6 +121,7 @@ dependencies:
   - openssl=3.5.0
   - pcre2=10.44
   - pip=25.0
+  - dm-tree=0.1.8
   - pixman=0.46.2
   - ply=3.11
   - pmw=2.0.1
@@ -129,7 +130,7 @@ dependencies:
   - pymol-open-source=3.1.0
   - pyqt=5.15.10
   - pyqt5-sip=12.13.0
-  - python=3.10.13
+  - python=3.10
   - python_abi=3.10
   - qt-main=5.15.15
   - readline=8.2
@@ -187,7 +188,6 @@ dependencies:
       - decorator==5.2.1
       - deepspeed==0.16.4
       - deprecated==1.2.18
-      - dm-tree==0.1.6
       - docker-pycreds==0.4.0
       - e3nn==0.5.6
       - easydict==1.13

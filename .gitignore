@@ -1,0 +1,10 @@
+# General ignores
+.DS_Store
+
+# Project directories (ignores everything inside)
+runs/
+scripts/
+docs/
+
+# File types
+*.ckpt
