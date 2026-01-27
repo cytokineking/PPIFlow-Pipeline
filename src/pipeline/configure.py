@@ -302,6 +302,10 @@ def _apply_default_command(step_name: str, run_id: int, out_dir: Path, input_dat
             str(af3_weights),
             "--num_jobs",
             str(num_jobs),
+            "--write_cif_model",
+            "true",
+            "--export_pdb_dir",
+            str(output_dir / "pdbs"),
         ]
         af3_db = tools.get("af3_db")
         if af3_db:
@@ -353,6 +357,10 @@ def _apply_default_command(step_name: str, run_id: int, out_dir: Path, input_dat
         af3_db = tools.get("af3_db")
         if af3_db:
             cfg["command"].extend(["--db_dir", str(af3_db)])
+        target_offsets = (input_data.get("target") or {}).get("chain_offsets")
+        if target_offsets:
+            cfg["command"].extend(["--target_offsets_json", str(target_offsets)])
+        cfg["command"].extend(["--target_chain", "B"])
         return
 
     if step_name == "dockq":

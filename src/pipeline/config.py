@@ -181,6 +181,18 @@ def normalize_input(
         candidate = _ROOT / "assets" / "tools" / "rosetta_db"
         if candidate.exists():
             tools["rosetta_db"] = str(candidate)
+    if not tools.get("af3_db"):
+        env_db = os.environ.get("AF3_DB_DIR") or os.environ.get("PPIFLOW_AF3_DB")
+        candidate = None
+        if env_db:
+            candidate = env_db
+        else:
+            for path in (_ROOT / "assets" / "tools" / "af3_db", _ROOT / "assets" / "tools" / "af3_db_stub"):
+                if path.exists():
+                    candidate = str(path)
+                    break
+        if candidate:
+            tools["af3_db"] = resolve_optional_path(candidate, base_dir=base_dir)
     if not tools.get("mpnn_ckpt"):
         mpnn_repo = tools.get("mpnn_repo")
         if mpnn_repo:
@@ -381,6 +393,7 @@ def build_input_from_cli(args: Any) -> InputSpec:
                 "PPIFLOW_MPNN_SOLUBLE_WEIGHTS",
             ),
             "af3score_repo": _env_fallback(args.af3score_repo, "AF3SCORE_REPO", "PPIFLOW_AF3SCORE_REPO"),
+            "af3_db": _env_fallback(None, "AF3_DB_DIR", "PPIFLOW_AF3_DB"),
             "rosetta_bin": args.rosetta_bin,
             "rosetta_db": args.rosetta_db,
             "flowpacker_repo": _env_fallback(args.flowpacker_repo, "FLOWPACKER_REPO", "PPIFLOW_FLOWPACKER_REPO"),

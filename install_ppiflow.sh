@@ -30,6 +30,7 @@ ppiflow_ckpt_path=""
 rosetta_db_path=""
 rosetta_bin_path=""
 mpnn_weights_dir=""
+mpnn_weights_soluble_dir=""
 abmpnn_weights_path=""
 abmpnn_weights_dir=""
 abmpnn_weights_file=""
@@ -72,6 +73,18 @@ need_cmd() {
 
 env_exists() {
   conda env list | awk '{print $1}' | grep -qx "$1"
+}
+
+maybe_git_lfs_pull() {
+  local repo="$1"
+  if [[ ! -d "$repo/.git" ]]; then
+    return
+  fi
+  if command -v git-lfs >/dev/null 2>&1; then
+    (cd "$repo" && git lfs install && git lfs pull) || true
+  else
+    log "Warning: git-lfs not found; LFS files may be missing in $repo"
+  fi
 }
 
 parse_args() {
@@ -238,6 +251,7 @@ clone_repo() {
 
 install_repos() {
   clone_repo "https://github.com/dauparas/ProteinMPNN.git" "$prefix/assets/external/ProteinMPNN"
+  maybe_git_lfs_pull "$prefix/assets/external/ProteinMPNN"
   if $install_flowpacker; then
     clone_repo "https://gitlab.com/mjslee0921/flowpacker.git" "$prefix/assets/external/flowpacker"
     if command -v git-lfs >/dev/null 2>&1; then
@@ -334,16 +348,41 @@ place_weights_and_ckpts() {
 }
 
 place_mpnn_weights() {
-  # ProteinMPNN ships its own model_weights inside the repo.
+  # ProteinMPNN ships its own weights via git-lfs.
   local mpnn_repo="$prefix/assets/external/ProteinMPNN"
-  local repo_weights="$mpnn_repo/model_weights"
-  if [[ -d "$repo_weights" ]]; then
-    mpnn_weights_dir="$repo_weights"
-    mkdir -p "$prefix/assets/weights/mpnn"
-    ln -s "$repo_weights" "$prefix/assets/weights/mpnn/weights" || true
-    log "Using ProteinMPNN model_weights -> $repo_weights"
+  local vanilla_dir="$mpnn_repo/vanilla_model_weights"
+  local soluble_dir="$mpnn_repo/soluble_model_weights"
+  local ca_dir="$mpnn_repo/ca_model_weights"
+  local legacy_dir="$mpnn_repo/model_weights"
+
+  if [[ ! -d "$vanilla_dir" && ! -d "$soluble_dir" && -d "$mpnn_repo" ]]; then
+    maybe_git_lfs_pull "$mpnn_repo"
+  fi
+
+  mkdir -p "$prefix/assets/weights/mpnn"
+  if [[ -d "$vanilla_dir" ]]; then
+    mpnn_weights_dir="$vanilla_dir"
+    ln -s "$vanilla_dir" "$prefix/assets/weights/mpnn/vanilla" || true
+    ln -s "$vanilla_dir" "$prefix/assets/weights/mpnn/weights" || true
+    log "Using ProteinMPNN vanilla weights -> $vanilla_dir"
+  elif [[ -d "$legacy_dir" ]]; then
+    mpnn_weights_dir="$legacy_dir"
+    ln -s "$legacy_dir" "$prefix/assets/weights/mpnn/weights" || true
+    log "Using ProteinMPNN legacy weights -> $legacy_dir"
   else
-    log "Warning: ProteinMPNN model_weights not found at $repo_weights (binder sequence design may fail)"
+    log "Warning: ProteinMPNN vanilla_model_weights not found at $vanilla_dir (binder sequence design may fail)"
+  fi
+
+  if [[ -d "$soluble_dir" ]]; then
+    mpnn_weights_soluble_dir="$soluble_dir"
+    ln -s "$soluble_dir" "$prefix/assets/weights/mpnn/soluble" || true
+    log "Using ProteinMPNN soluble weights -> $soluble_dir"
+  else
+    log "Warning: ProteinMPNN soluble_model_weights not found at $soluble_dir"
+  fi
+
+  if [[ -d "$ca_dir" ]]; then
+    ln -s "$ca_dir" "$prefix/assets/weights/mpnn/ca" || true
   fi
 
   mkdir -p "$prefix/assets/weights/abmpnn"
@@ -360,6 +399,7 @@ place_mpnn_weights() {
       abmpnn_weights_file="$prefix/assets/weights/abmpnn/abmpnn.pt"
       log "Using bundled AbMPNN weights -> $abmpnn_weights_file"
     else
+      maybe_git_lfs_pull "$prefix"
       log "Warning: AbMPNN weights not found at $prefix/assets/weights/abmpnn/abmpnn.pt"
     fi
   fi
@@ -399,6 +439,7 @@ export AF3SCORE_CUDA_HOME="$conda_base/envs/${af3score_env_name}"
 export FLOWPACKER_REPO="$prefix/assets/external/flowpacker"
 export PROTEINMPNN_REPO="$prefix/assets/external/ProteinMPNN"
 export MPNN_WEIGHTS="${mpnn_weights_dir}"
+export MPNN_SOLUBLE_WEIGHTS="${mpnn_weights_soluble_dir}"
 export ABMPNN_WEIGHTS_DIR="${abmpnn_weights_dir}"
 export ABMPNN_WEIGHTS_FILE="${abmpnn_weights_file}"
 export ABMPNN_WEIGHTS="${abmpnn_weights_file}"

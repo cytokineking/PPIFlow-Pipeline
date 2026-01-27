@@ -1,5 +1,7 @@
 # General ignores
 .DS_Store
+__pycache__
+__pycache__/
 
 # Project directories (ignores everything inside)
 runs/

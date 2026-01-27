@@ -190,6 +190,7 @@ class RosettaInterfaceStep(Step):
             workers = min(len(jobs), os.cpu_count() or 1)
             total = len(jobs)
             failures: list[str] = []
+            allow_failures = bool((ctx.input_data.get("options") or {}).get("continue_on_item_error"))
             with Pool(processes=workers) as pool:
                 args_iter = [
                     (job_dir.name, cmd, job_dir, out, env, bool(self.cfg.get("_verbose")))
@@ -212,8 +213,10 @@ class RosettaInterfaceStep(Step):
                     if not ok and err:
                         failures.append(f"{name}: {err}")
             if failures:
-                sample = "; ".join(failures[:3])
-                raise StepError(f"rosetta_interface failed for {len(failures)} jobs (e.g., {sample})")
+                (out_dir / "rosetta_interface_failures.txt").write_text("\n".join(failures) + "\n")
+                if not allow_failures or len(failures) >= total:
+                    sample = "; ".join(failures[:3])
+                    raise StepError(f"rosetta_interface failed for {len(failures)} jobs (e.g., {sample})")
 
         # Run parser to generate residue_energy.csv
         script = _find_rosetta_resource("get_interface_energy.py")
@@ -390,6 +393,7 @@ class RosettaRelaxStep(Step):
             workers = min(len(jobs), os.cpu_count() or 1)
             total = len(jobs)
             failures: list[str] = []
+            allow_failures = bool((ctx.input_data.get("options") or {}).get("continue_on_item_error"))
             with Pool(processes=workers) as pool:
                 args_iter = [
                     (job_dir.name, cmd, job_dir, out, env, bool(self.cfg.get("_verbose")))
@@ -412,8 +416,10 @@ class RosettaRelaxStep(Step):
                     if not ok and err:
                         failures.append(f"{name}: {err}")
             if failures:
-                sample = "; ".join(failures[:3])
-                raise StepError(f"relax failed for {len(failures)} jobs (e.g., {sample})")
+                (out_dir / "relax_failures.txt").write_text("\n".join(failures) + "\n")
+                if not allow_failures or len(failures) >= total:
+                    sample = "; ".join(failures[:3])
+                    raise StepError(f"relax failed for {len(failures)} jobs (e.g., {sample})")
 
         # Collect relaxed PDBs (rosetta_scripts writes *_0001.pdb by default)
         for job in rosetta_root.iterdir():

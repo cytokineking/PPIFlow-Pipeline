@@ -174,6 +174,12 @@ def process_file(row, write_dir, process_rotamers=False):
     struct_chains = {
         chain.id.upper(): chain
         for chain in structure.get_chains()}
+    if row['chain1_id'] not in struct_chains:
+        raise ValueError(f"Target chain {row['chain1_id']} not found in {file_path}")
+    if row['chain2_id'] not in struct_chains:
+        raise ValueError(f"Binder chain {row['chain2_id']} not found in {file_path}")
+    if row['chain1_id'] == row['chain2_id']:
+        raise ValueError("Target and binder chain IDs must differ")
     metadata['num_chains'] = len(struct_chains)
     metadata['target_seq_len'] = len(struct_chains[row['chain1_id']])
     metadata['binder_seq_len'] = len(struct_chains[row['chain2_id']])
@@ -311,6 +317,5 @@ if __name__ == "__main__":
     # Don't use GPU
     args = parser.parse_args()
     main(args)
-
 
 

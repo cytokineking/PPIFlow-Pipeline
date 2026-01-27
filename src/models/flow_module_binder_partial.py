@@ -193,10 +193,12 @@ class FlowModule(LightningModule):
             res_idx = batch.get("original_res_idx")
             if res_idx is None:
                 res_idx = batch.get("res_idx")
+            out_chain_idx = 1 - batch["chain_idx"][i]
             saved_path = au.write_prot_to_pdb(
                 final_pos,
                 os.path.join(sample_dirs, f"sample{sample_ids[i]}.pdb"),
                 no_indexing=True,
+                chain_index=out_chain_idx,
                 aatype=write_aatype[i],
                 b_factors=b_factors,
                 residue_index=res_idx[i] if res_idx is not None else None,
@@ -290,11 +292,12 @@ class FlowModule(LightningModule):
                 res_idx = batch.get("original_res_idx")
                 if res_idx is None:
                     res_idx = batch.get("res_idx")
+                out_chain_idx = 1 - batch["chain_idx"][i]
                 saved_path = au.write_prot_to_pdb(
                     final_pos,
                     os.path.join(save_dir, f"sample{sample_ids[i].item()}_{traj_t}.pdb"),
                     no_indexing=True,
-                    chain_index=batch['chain_idx'][i],
+                    chain_index=out_chain_idx,
                     aatype=write_aatype[i],
                     b_factors=b_factors,
                     residue_index=res_idx[i] if res_idx is not None else None,

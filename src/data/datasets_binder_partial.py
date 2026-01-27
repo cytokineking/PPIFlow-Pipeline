@@ -199,8 +199,15 @@ def _process_csv_row(csv_row, motif_cfg=None):
     )
     new_chain_idx = np.zeros_like(processed_feats["residue_index"])
 
-    # Reset chain index as binder=1 target=0
+    # Reset chain index as binder=1 target=0 (match binder dataset semantics)
     if all_chain_idx.size == 2:
+        target_id = csv_row.get("target_id") or csv_row.get("chain1_id")
+        if target_id is not None:
+            target_chain_id = du.chain_str_to_int(str(target_id))
+            if not np.any(processed_feats["chain_index"] == target_chain_id):
+                raise ValueError(
+                    f"Target chain {target_id} not found in processed features for {csv_row.get('pdb_name')}"
+                )
         if "binder_label" in csv_row.keys():
             binder_chain_id = du.chain_str_to_int(csv_row["binder_label"])
         else:
@@ -208,7 +215,15 @@ def _process_csv_row(csv_row, motif_cfg=None):
         binder_chain_index = np.nonzero(
             processed_feats["chain_index"] == binder_chain_id
         )[0]
+        if binder_chain_index.size == 0:
+            raise ValueError(
+                f"Binder chain {csv_row.get('binder_id')} not found in processed features for {csv_row.get('pdb_name')}"
+            )
         new_chain_idx[binder_chain_index] = 1
+        if not np.any(new_chain_idx == 0) or not np.any(new_chain_idx == 1):
+            raise ValueError(
+                f"Invalid chain mapping for {csv_row.get('pdb_name')}: expected target=0/binder=1"
+            )
 
     target_interface_mask = target_interface_mask * (new_chain_idx == 0)
     binder_interface_mask = binder_interface_mask * (new_chain_idx == 1)

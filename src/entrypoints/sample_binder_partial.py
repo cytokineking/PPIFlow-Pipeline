@@ -141,6 +141,19 @@ def get_motif_residues(motif_contig, chainid):
     return result
 
 
+def _normalize_motif_contig(motif_contig):
+    if motif_contig is None:
+        return None
+    if isinstance(motif_contig, float) and np.isnan(motif_contig):
+        return None
+    if isinstance(motif_contig, str):
+        cleaned = motif_contig.strip()
+        if not cleaned or cleaned.lower() in {"nan", "none", "null"}:
+            return None
+        return cleaned
+    return motif_contig
+
+
 def preprocess_csv_and_pkl(pdb_path, output_dir, args) -> str:
     """
     Process PDB file to generate pkl and metadata
@@ -162,13 +175,14 @@ def preprocess_csv_and_pkl(pdb_path, output_dir, args) -> str:
         for token in expanded:
             if not token or token[0] != target_chain:
                 raise ValueError("Hotspots must be on the target chain")
-            match = re.match(r"^%s(\\d+)" % re.escape(target_chain), token)
+            match = re.match(r"^%s(\d+)" % re.escape(target_chain), token)
             if not match:
                 raise ValueError(f"Invalid hotspot token: {token}")
             hotspot_residues.append(int(match.group(1)))
         input_info["chain1_residues"] = hotspot_residues
         input_info["chain1_id"] = target_chain
-        pass
+        if args.binder_chain is not None:
+            input_info["chain2_id"] = args.binder_chain
     else:
         print(
             "hotspots not specified, generate hotspots according to known binder interface..."
@@ -189,9 +203,10 @@ def preprocess_csv_and_pkl(pdb_path, output_dir, args) -> str:
         input_info["chain1_id"] = target_chain
         input_info["chain2_id"] = args.binder_chain
 
-    if args.motif_contig is not None:
+    motif_contig = _normalize_motif_contig(args.motif_contig)
+    if motif_contig is not None:
         input_info["binder_motif"] = get_motif_residues(
-            args.motif_contig, args.binder_chain
+            motif_contig, args.binder_chain
         )
 
     metadata = process_file(input_info, write_dir=output_dir)
@@ -248,6 +263,7 @@ def run_pipeline(args):
     hotspots_spec = resolve_hotspots_input(
         args.specified_hotspots, hotspots_file=args.hotspots_file
     )
+    motif_contig = _normalize_motif_contig(args.motif_contig)
     ppi_dataset_cfg: Dict[str, Any] = {
         "test_csv_path": processed_csv_path,
         "samples_per_target": args.samples_per_target,
@@ -256,7 +272,7 @@ def run_pipeline(args):
         "max_hotspot_ratio": args.sample_hotspot_rate_max,
         "motif": (
             None
-            if (args.motif_contig is None)
+            if (motif_contig is None)
             else {"define_motif": True}
         ),
     }

@@ -188,6 +188,9 @@ def execute_pipeline(args) -> None:
     os.environ["PPIFLOW_PROTOCOL"] = str(input_data.get("protocol"))
     os.environ["PPIFLOW_RUN_ID"] = str(run_id)
     os.environ["PPIFLOW_SEED"] = str(run_seed)
+    if getattr(args, "continue_on_error", False):
+        options = input_data.setdefault("options", {})
+        options.setdefault("continue_on_item_error", True)
 
     hb = HeartbeatReporter.from_env(out_dir)
 

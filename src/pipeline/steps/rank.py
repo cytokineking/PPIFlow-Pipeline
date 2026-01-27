@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import filecmp
 import json
 import os
 import re
@@ -136,6 +137,9 @@ class RankStep(Step):
         if not name:
             return None
         candidates = [name]
+        candidates.append(name.lower())
+        if re.search(r"_\d+$", name):
+            candidates.append(re.sub(r"_\d+$", "", name))
         if "__sample" in name:
             # Map refold names to round1-style names (e.g. foo__sample3_4 -> foo_4).
             candidates.append(re.sub(r"__sample\d+_", "_", name))
@@ -146,6 +150,59 @@ class RankStep(Step):
             if cand in mapping:
                 return mapping[cand]
         return None
+
+    def _augment_binder_interface_scores(self, run_dir: Path, mapping: dict[str, float]) -> dict[str, float]:
+        partial_root = run_dir / "partial_flow"
+        seqs_pdb_dir = run_dir / "seqs_round2" / "pdbs"
+        if not partial_root.exists() or not seqs_pdb_dir.exists():
+            return mapping
+
+        def _raw_path_for_partial(base_dir: Path) -> str | None:
+            input_dir = base_dir / "input"
+            if not input_dir.exists():
+                return None
+            for csv_path in sorted(input_dir.glob("*_input.csv")):
+                try:
+                    with open(csv_path, newline="") as handle:
+                        reader = csv.DictReader(handle)
+                        row = next(reader, None)
+                    if row and row.get("raw_path"):
+                        return row["raw_path"]
+                except Exception:
+                    continue
+            return None
+
+        augmented = dict(mapping)
+        for seq_pdb in sorted(seqs_pdb_dir.glob("*.pdb")):
+            name = seq_pdb.stem
+            if "__" not in name:
+                continue
+            prefix, sample = name.split("__", 1)
+            sample_file = f"{sample}.pdb"
+            matched_score = None
+            for base_dir in sorted(partial_root.iterdir()):
+                if not base_dir.is_dir():
+                    continue
+                cand = base_dir / prefix / sample_file
+                if not cand.exists():
+                    continue
+                try:
+                    same = filecmp.cmp(seq_pdb, cand, shallow=False)
+                except Exception:
+                    same = True
+                if not same:
+                    continue
+                raw_path = _raw_path_for_partial(base_dir)
+                if not raw_path:
+                    continue
+                score = augmented.get(Path(raw_path).stem)
+                if score is not None:
+                    matched_score = score
+                    break
+            if matched_score is not None:
+                augmented[name] = matched_score
+                augmented[name.lower()] = matched_score
+        return augmented
 
     def _load_dockq_scores(self, run_dir: Path) -> dict[str, float]:
         dockq_dir = run_dir / "dockq"
@@ -214,6 +271,9 @@ class RankStep(Step):
 
         rows: list[dict[str, Any]] = []
         interface_scores = self._load_interface_scores(run_dir)
+        protocol = str(ctx.input_data.get("protocol") or "")
+        if protocol == "binder":
+            interface_scores = self._augment_binder_interface_scores(run_dir, interface_scores)
         dockq_scores = self._load_dockq_scores(run_dir)
         using_refold = bool(metrics_path and "af3_refold" in str(metrics_path))
         if metrics_path and metrics_path.exists():
