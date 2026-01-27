@@ -5,7 +5,6 @@ __pycache__/
 
 # Project directories (ignores everything inside)
 runs/
-scripts/
 docs/
 
 # File types

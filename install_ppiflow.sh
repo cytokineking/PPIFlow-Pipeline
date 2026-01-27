@@ -12,8 +12,8 @@ DEFAULT_PREFIX="$SCRIPT_DIR"
 
 pkg_manager="conda"
 prefix="$DEFAULT_PREFIX"
-install_flowpacker=false
-install_af3score=false
+install_flowpacker=true
+install_af3score=true
 install_dockq=true
 skip_gpu_check=false
 install_os_deps=false
@@ -46,10 +46,10 @@ Required:
 Options:
   --prefix <dir>                   Install root (default: repo root)
   --pkg-manager <conda|mamba>      Package manager (default: conda)
-  --install-flowpacker             Clone FlowPacker repo + LFS weights
+  --no-install-flowpacker          Skip FlowPacker install (default: install)
+  --no-install-af3score            Skip AF3Score install (default: install)
   --no-install-dockq               Skip DockQ install (default: install)
   --abmpnn-weights-path <dir>      AbMPNN weights dir (override; default: assets/weights/abmpnn)
-  --install-af3score               Clone + build AF3Score in a separate env
   --af3score-env-name <name>       AF3Score conda env name (default: ppiflow-af3score)
   --rosetta-env-name <name>        Rosetta conda env name (default: ppiflow-rosetta)
   --no-af3-data-pipeline           Skip AF3 database download/build (default: true)
@@ -92,9 +92,9 @@ parse_args() {
     case "$1" in
       --prefix) prefix="$2"; shift 2 ;;
       --pkg-manager) pkg_manager="$2"; shift 2 ;;
-      --install-flowpacker) install_flowpacker=true; shift ;;
+      --no-install-flowpacker) install_flowpacker=false; shift ;;
       --no-install-dockq) install_dockq=false; shift ;;
-      --install-af3score) install_af3score=true; shift ;;
+      --no-install-af3score) install_af3score=false; shift ;;
       --no-af3-data-pipeline) no_af3_data_pipeline=true; shift ;;
       --af3-db-path) af3_db_path="$2"; shift 2 ;;
       --af3score-env-name) af3score_env_name="$2"; shift 2 ;;
@@ -136,8 +136,8 @@ maybe_install_os_deps() {
   log "Installing OS deps (apt-get)..."
   sudo apt-get update -y
   sudo apt-get install -y \
-    git git-lfs wget bzip2 ca-certificates build-essential \
-    zlib1g-dev
+    git git-lfs wget curl bzip2 ca-certificates build-essential \
+    zlib1g-dev zstd
 }
 
 check_gpu() {

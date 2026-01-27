@@ -1,4 +1,4 @@
-# PPIFlow
+# PPIFlow (PPIFlow-Pipeline fork)
 
 ![](./assets/model.png)
 
@@ -11,21 +11,40 @@ reference.
 
 ### 1) Install
 
-Recommended: use the install script to set up the environment and external tool
-paths in one place.
+Recommended: use the install script to set up the environment, external tool
+repos, and paths in one place. This fork expects you to supply:
+- AF3 weights (`af3.bin.zst`): Obtain from Google
+- PPIFlow checkpoints (`binder.ckpt`, `antibody.ckpt`, `nanobody.ckpt`, `monomer.ckpt`): Download from https://drive.google.com/drive/folders/1BcIBUL2yq1gOchHfN68-AcZK3hiMAMVN?usp=drive_link
 
 ```bash
 ./install_ppiflow.sh \
   --af3-weights-path /path/to/af3.bin.zst \
   --ppiflow-checkpoints-path /path/to/ppiflow_checkpoints \
-  --install-flowpacker \
-  --install-proteinmpnn \
-  --install-af3score \
+  --install-os-deps \
+  --install-conda \
   --write-env
 ```
 
-Optional: pass `--rosetta-db-path /path/to/rosetta/database` to override the
-default Rosetta database bundled with the installer.
+The installer creates:
+- `ppiflow` env (main pipeline)
+- `ppiflow-af3score` env (AF3Score + JAX)
+- `ppiflow-rosetta` env (Rosetta CLI)
+
+Optional flags:
+- `--no-install-flowpacker` or `--no-install-af3score` to skip those tools
+- `--no-install-dockq` to skip DockQ
+- `--rosetta-db-path /path/to/rosetta/database` to override Rosetta DB
+
+After install, load tool paths:
+```bash
+source ./env.sh
+```
+
+If AbMPNN weights are tracked via Git LFS in this fork, make sure you have them:
+```bash
+git lfs install
+git lfs pull
+```
 
 Manual option (if you want to manage tools yourself):
 
@@ -36,7 +55,7 @@ conda activate ppiflow
 
 You will still need paths to external tools (FlowPacker, ProteinMPNN or
 AbMPNN, AF3Score/AF3) and PPIFlow checkpoints. Rosetta CLI (`rosetta_scripts`)
-is installed into the main `ppiflow` conda environment by the installer.
+is installed into a separate `ppiflow-rosetta` conda environment by the installer.
 
 ### 2) Run with a YAML input
 
@@ -139,7 +158,7 @@ tools:
   rosetta_bin: /path/to/rosetta_scripts
   # rosetta_db is optional; installer wires it if available.
   rosetta_db: /path/to/rosetta/database
-  af3_weights: /path/to/af3.bin.zst
+  af3_weights: /path/to/af3/weights/dir   # contains af3.bin (installer sets this)
 sequence_design:
   round1:
     num_seq_per_backbone: 16

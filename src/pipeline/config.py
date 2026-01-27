@@ -203,6 +203,18 @@ def normalize_input(
         candidate = _ROOT / "assets" / "weights" / "abmpnn" / "abmpnn.pt"
         if candidate.exists():
             tools["abmpnn_ckpt"] = str(candidate)
+    if not tools.get("ppiflow_ckpt"):
+        ckpt_name = None
+        if protocol == "binder":
+            ckpt_name = "binder.ckpt"
+        elif protocol == "antibody":
+            ckpt_name = "antibody.ckpt"
+        elif protocol == "vhh":
+            ckpt_name = "nanobody.ckpt"
+        if ckpt_name:
+            candidate = _ROOT / "assets" / "checkpoints" / ckpt_name
+            if candidate.exists():
+                tools["ppiflow_ckpt"] = str(candidate)
 
     # Protocol-aware defaults (paper-aligned)
     seq = out.get("sequence_design") or {}
