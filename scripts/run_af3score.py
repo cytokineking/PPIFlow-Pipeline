@@ -175,6 +175,28 @@ def _prepare_metrics_pdb_dir(input_pdb_dir: Path, output_dir_af3score: Path, wor
     return metrics_dir
 
 
+def _ensure_seed10_alias(output_dir_af3score: Path) -> None:
+    for job_dir in sorted(output_dir_af3score.iterdir()):
+        if not job_dir.is_dir():
+            continue
+        seed10 = job_dir / "seed-10_sample-0"
+        if seed10.exists():
+            continue
+        seed_dirs = sorted([p for p in job_dir.glob("seed-*_sample-0") if p.is_dir()])
+        if not seed_dirs:
+            continue
+        target = seed_dirs[0]
+        try:
+            os.symlink(target.name, seed10)
+        except FileExistsError:
+            continue
+        except Exception:
+            try:
+                shutil.copytree(target, seed10)
+            except Exception:
+                continue
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_pdb_dir", required=True)
@@ -384,6 +406,7 @@ def main() -> None:
             _progress(idx, total_json, "run_af3", folder_name, status, time.time() - start)
 
     metrics_input_dir = _prepare_metrics_pdb_dir(input_pdb_dir, output_dir_af3score, output_dir)
+    _ensure_seed10_alias(output_dir_af3score)
     start = time.time()
     status = "OK"
     try:

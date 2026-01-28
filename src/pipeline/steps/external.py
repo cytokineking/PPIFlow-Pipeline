@@ -521,17 +521,20 @@ class AF3ScoreStep(ExternalCommandStep):
                 return row[col]
             return None
 
-        def _get_pairwise_iptm(row, chain_a: str, chain_b: str):
-            val = _get_ci(row, f"iptm_{chain_a}_{chain_b}")
-            if val is not None:
-                return val
-            return _get_ci(row, f"iptm_{chain_b}_{chain_a}")
 
         rows: list[dict[str, Any]] = []
         iptm_global_col: list[float | None] = []
         iptm_binder_target_col: list[float | None] = []
         protocol = ctx.input_data.get("protocol")
         is_antibody = protocol == "antibody"
+        target_chain = "B"
+        if is_antibody:
+            target = ctx.input_data.get("target") or {}
+            chains = target.get("chains")
+            if isinstance(chains, list) and chains:
+                target_chain = str(chains[0])
+            elif isinstance(chains, str) and chains:
+                target_chain = str(chains)
         for _, row in df.iterrows():
             desc = _get(row, "description", "name", "model", "pdb_name")
             desc = str(desc) if desc is not None else ""
@@ -539,14 +542,14 @@ class AF3ScoreStep(ExternalCommandStep):
             iptm_global = _get(row, "iptm", "ipTM", "AF3Score_interchain_iptm", "AF3Score_chain_iptm")
             iptm_binder_target = None
             if is_antibody:
-                iptm_ab = _get_pairwise_iptm(row, "A", "B")
-                iptm_bc = _get_pairwise_iptm(row, "B", "C")
-                if iptm_ab is None or iptm_bc is None:
+                chain_target_iptm = _get_ci(row, f"chain_{target_chain}_iptm")
+                if chain_target_iptm is not None:
+                    iptm_binder_target = float(chain_target_iptm)
+                else:
                     raise StepError(
-                        "AF3Score metrics missing pairwise iptm columns required for antibody scoring "
-                        "(need iptm_A_B and iptm_B_C or reversed ordering)."
+                        "AF3Score metrics missing antibody binder-target iptm. "
+                        "Require chain_<target>_iptm (e.g., chain_B_iptm)."
                     )
-                iptm_binder_target = (float(iptm_ab) + float(iptm_bc)) / 2.0
                 iptm = iptm_binder_target
             else:
                 iptm = iptm_global
@@ -758,7 +761,24 @@ class AF3RefoldStep(ExternalCommandStep):
                     return row[k]
             return None
 
+        def _get_ci(row, key: str):
+            lower_map = {str(c).lower(): c for c in row.index}
+            col = lower_map.get(key.lower())
+            if col is not None and pd.notna(row[col]):
+                return row[col]
+            return None
+
         rows: list[dict[str, Any]] = []
+        protocol = ctx.input_data.get("protocol")
+        is_antibody = protocol == "antibody"
+        target_chain = "B"
+        if is_antibody:
+            target = ctx.input_data.get("target") or {}
+            chains = target.get("chains")
+            if isinstance(chains, list) and chains:
+                target_chain = str(chains[0])
+            elif isinstance(chains, str) and chains:
+                target_chain = str(chains)
         for _, row in df.iterrows():
             desc = _get(row, "description", "name", "model", "pdb_name")
             desc = str(desc) if desc is not None else ""
@@ -766,6 +786,15 @@ class AF3RefoldStep(ExternalCommandStep):
                 continue
             iptm = _get(row, "iptm", "ipTM", "AF3Score_interchain_iptm", "AF3Score_chain_iptm")
             ptm = _get(row, "ptm", "pTM", "ptm_A", "ptm_B", "AF3Score_chain_ptm")
+            if is_antibody:
+                chain_target_iptm = _get_ci(row, f"chain_{target_chain}_iptm")
+                if chain_target_iptm is not None:
+                    iptm = float(chain_target_iptm)
+                else:
+                    raise StepError(
+                        "AF3Score metrics missing antibody binder-target iptm. "
+                        "Require chain_<target>_iptm (e.g., chain_B_iptm)."
+                    )
             pdb_path = name_map.get(desc)
             rows.append({
                 "design_id": extract_design_id(desc),
